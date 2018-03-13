@@ -1,0 +1,97 @@
+<html>
+    <head>
+        <!--Load the AJAX API-->
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript">
+
+            // Load the Visualization API and the corechart package.
+            google.charts.load('current', {'packages': ['corechart']});
+
+            // Set a callback to run when the Google Visualization API is loaded.
+            google.charts.setOnLoadCallback(drawVisualization);
+
+            function joinAndDraw(tables){
+              console.log("arrived");
+              console.log(Array.isArray(tables));
+              
+              console.log(tables[0].getNumberOfRows());
+              console.log(tables[1].getNumberOfRows());
+            }
+
+
+            function drawVisualization() {
+
+                var timeDataTable;
+                var demoDataTable;
+
+                var queryString = ""; // encodeURIComponent('LIMIT 5');
+
+                var timeSheetURL = 'https://docs.google.com/spreadsheets/d/1PV1YqyqkwkR0DJgxxVHFAOm0GvUemIlh4hE5ZqmvLNg/gviz/tq?sheet=Time&headers=1';
+                var demoSheetURL = 'https://docs.google.com/spreadsheets/d/1PV1YqyqkwkR0DJgxxVHFAOm0GvUemIlh4hE5ZqmvLNg/gviz/tq?sheet=Demographics&headers=1'
+
+                var timeURL = timeSheetURL + queryString;
+                var demoURL = demoSheetURL + queryString;
+
+                function handleError(message) {
+                    alert(message);
+                }
+
+                function setTimeTable(response) {
+                  console.log("setTimeTable");
+                  
+                    timeDataTable = response.getDataTable();
+                    console.log(timeDataTable.getNumberOfRows());
+                }
+
+                function setDemoTable(response) {
+                  console.log("setDemoTable");
+
+                    demoDataTable = response.getDataTable();
+                    console.log(demoDataTable.getNumberOfRows());
+
+                }
+                
+                function wrapTable(response) {
+                  console.log("wrapTable");
+                  return response.getDataTable();
+                }
+
+                // this is where action begins
+
+                function loadData(url) {
+                  console.log(url);
+                  return new Promise(
+                    function(resolve, reject) {
+                      var query = new google.visualization.Query(url);
+                      query.send(function (response) {
+                          if(response.isError()) { 
+                            reject(response.getMessage() + ' ' + response.getDetailedMessage());
+                          } else {
+                            resolve(response);
+                          }
+                       }
+                    )}
+                  )
+                }
+
+                // we want to do these "in parallel" and when both are done, combine data and draw chart.
+                // how do we do that with two Promises?
+                             
+               Promise.all([loadData(timeURL).then(wrapTable, handleError),
+                               loadData(demoURL).then(wrapTable, handleError)]).
+                          then(joinAndDraw);
+               
+            }
+
+
+
+            
+
+        </script>
+    </head>
+
+    <body>
+        <!--Div that will hold the pie chart-->
+        <div id="Time"></div>
+    </body>
+</html>
