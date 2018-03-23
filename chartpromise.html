@@ -17,27 +17,32 @@
               console.log(tables[0].getNumberOfRows());
               console.log(tables[1].getNumberOfRows());
 
+            // join two data tables
             var joinData = new google.visualization.data.join(tables[0], tables[1],'left', [[0,0]],[3,4],[1,1]);
             var keys = [];
             for (var i = 0; i < tables[0].getNumberOfColumns(); i++) {
                 keys.push([i, i]);
               }
-              console.log(joinData.getNumberOfColumns());
+
+
+              //filter Male students who took CISC1110
               var rows = joinData.getFilteredRows([{column: 1, value: 1110}, {column: 3, value: 'M'}]);
-              console.log(rows);
+
+
+              //re organize the filtered rows to a data table
               var view1 = new google.visualization.DataView(joinData);
               view1.setRows(rows);
-
-
               var newData = view1.toDataTable();
 
 
-
+              // all distinct values of letter grade
               var distinctValues = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'W', 'WU', 'WD', 'F'];
 
                 var viewColumns = [0, 1];
                 var groupColumns = [];
+                var totalNumber = [];
 
+                //select each student's grade and make each grade as a column
                 for (var i = 0; i < distinctValues.length; i++) {
                     viewColumns.push({
                         type: 'number',
@@ -48,61 +53,74 @@
                             }
                         })(distinctValues[i])
                     });
+
                     groupColumns.push({
                         column: i+2,
                         type: 'number',
 
-                        aggregation: google.visualization.data.sum
+                       aggregation: google.visualization.data.sum
                     });
                 }
 
 
-                viewColumns.push({
-                    type: 'number',
-                    label: 'Total',
-                    calc: function (dt, row) {
-                        return 1;
-                    }
-                });
-                groupColumns.push({
-                    column: distinctValues.length + 2,
-                    type: 'number',
-                    aggregation: google.visualization.data.sum
-                });
+
+
+
+
 
                 var view = new google.visualization.DataView(newData);
                 view.setColumns(viewColumns);
 
 
                 var pivotedData = google.visualization.data.group(view, [0, 1], groupColumns);
-                
-
-                var table = new google.visualization.ChartWrapper({
-                      'chartType': 'Table',
-                      'dataTable': pivotedData,
-                      'containerId': 'Time',
-                    });
-                    table.draw();
 
 
-                    //draw chart
+                //create a new data table for displaying the result
+                var newTotal = [];
+                var totalTable = new google.visualization.DataTable();
+                totalTable.addColumn('string', 'Letter of Grade');
+                totalTable.addColumn('number', 'Grade');
 
-                //    view.setColumns([0, 1,
-                    //                 { calc: "stringify",
-                      //                 sourceColumn: 1,
-                    //                   type: "string",
-                      //                 role: "annotation" },
-                        //             2]);
 
-                    var options = {
-                      title: "Brooklyn College Male Student CISC1110 Grade",
-                      width: 600,
-                      height: 400,
-                      bar: {groupWidth: "10%"},
-                      legend: { position: "none" },
-                    };
-                    var chart = new google.visualization.BarChart(document.getElementById("Time"));
-                    chart.draw(pivotedData, options);
+
+                  //call calcTotal to calculate the sum and then add each number to the new data table
+                for(var i = 2; i < distinctValues.length; i++){
+                  newTotal[i]  = calcTotal(distinctValues[i], i);
+                  totalTable.addRow([ distinctValues[i],  newTotal[i].getValue(0, 1)]);
+
+                }
+
+
+
+
+                // draw data table
+              var table = new google.visualization.ChartWrapper({
+                    'chartType': 'Table',
+                    'dataTable': totalTable,
+                    'containerId': 'Time',
+              });
+                table.draw();
+
+
+
+                  // calculate the sum of each column
+                    function calcTotal(grade ,totalGrade) {
+                      var dataTotal = google.visualization.data.group(
+                        pivotedData,
+                        [{column: 0, type: 'string', modifier: function () {return grade;}}],
+                        [
+                          {
+                            aggregation: google.visualization.data.sum,
+                            column: totalGrade,
+                            label: 'Total',
+                            type: 'number'
+                          }
+                        ]
+                      );
+
+                      return dataTotal;
+                      }
+
 
 
            }
