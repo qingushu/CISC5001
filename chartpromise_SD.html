@@ -23,27 +23,30 @@ function joinAndDraw(tables){
     var view1 = new google.visualization.DataView(joinData);
     view1.setRows(rows);
 
-
     // get dt of selected rows
     var dataM3110 = view1.toDataTable();
 
-
-    // all desired values of letter grade
-    var gradeValues = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'W', 'WU', 'WD', 'F'];
-
+    // create table of grades and counts
     var gradeTable = google.visualization.data.group(dataM3110, [2],
                                                      [{'column':0,
                                                        'aggregation': google.visualization.data.count,
                                                        'type': 'number'}]);
 
+    // all desired values of letter grade
+    var gradeValues = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'W', 'WU', 'WD', 'F'];
+    
+    // filter out rows with no grade, starred (replaced) grades, etc--only count the 'real' grades
     var gradeRows = gradeTable.getFilteredRows([{column:0, test: x => gradeValues.includes(x)}]);
 
+
+    // create view of desired rows
     var view2 = new google.visualization.DataView(gradeTable);
     view2.setRows(gradeRows);
 
+    // make bar chart of desired rows
     var chart = new google.visualization.BarChart(document.getElementById('Time'));
     chart.draw(view2);
-
+    
     /*
     var filteredGradeTable = view2.toDataTable();
     
