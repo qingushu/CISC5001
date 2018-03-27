@@ -8,6 +8,7 @@
             google.charts.load('current', {packages: ['corechart', 'bar']});
             // Set a callback to run when the Google Visualization API is loaded.
             google.charts.setOnLoadCallback(drawVisualization);
+
             function joinAndDraw(tables){
               console.log("arrived");
               console.log(Array.isArray(tables));
@@ -81,8 +82,8 @@
 
             totalTable1 = groupColumnandDraw(newData);
             totalTable2 = groupColumnandDraw(newDataFemale);
-            var joinTable = new google.visualization.data.join(totalTable1, totalTable2,'left', [[0,0]],[1],[1]);
-
+            //var joinTable = new google.visualization.data.join(totalTable1, totalTable2,'left', [[0,0]],[1],[1]);
+/*
             var table = new google.visualization.ChartWrapper({
                   'chartType': 'Table',
                   'dataTable': joinTable,
@@ -90,7 +91,7 @@
             });
           //  table.draw();
 
-                  // calculate the sum of each column
+    */              // calculate the sum of each column
                     function calcTotal(grade ,totalGrade, pivotedData) {
                       var dataTotal = google.visualization.data.group(
                         pivotedData,
@@ -122,9 +123,10 @@
                         },
                         bars: 'horizontal'
                       };
-                      var maleGradeChart = new google.charts.Bar(document.getElementById('Time'));
-                      maleGradeChart.draw(joinTable, materialOptions);
-                    //  maleGradeChart.draw(totalTable2, materialOptions);
+                      var maleGradeChart = new google.charts.Bar(document.getElementById('Male'));
+                      var FemaleGradeChart = new google.charts.Bar(document.getElementById('Female'));
+                      maleGradeChart.draw(totalTable1, materialOptions);
+                      FemaleGradeChart.draw(totalTable2, materialOptions);
 
 
            }
@@ -179,7 +181,12 @@
     </head>
 
     <body>
+      <table class = "columns">
+        <tr>
         <!--Div that will hold the pie chart-->
-        <div id="Time"></div>
+        <td><div id="Male"></div></td>
+        <td><div id ="Female"></div></td>
+      </tr>
+    </table>
     </body>
 </html>
