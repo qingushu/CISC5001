@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+
+
+        <!--Load the AJAX API-->
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script type="text/javascript">
+            // Load the Visualization API and the corechart package.
+            google.charts.load('current', {'packages': ['corechart']});
+
+            // Load the Visualization API and the controls package.
+            google.charts.load('current', {'packages':['corechart', 'controls']});
+            google.charts.setOnLoadCallback(drawVisualization);
+
+            function joinAndDraw(tables){
+            // join two data tables
+            var joinData = new google.visualization.data.join(tables[0], tables[1] ,'left', [[0,0]],[1, 3, 4],[1]);
+
+              //filter Male students who took CISC1110
+            var rows = joinData.getFilteredRows([{column: 2, value: 1110}]);
+
+              //re organize the filtered rows to a data table
+            var newData = reorganize(rows, joinData);
+
+              // all distinct values of letter grade
+            // totalTable1 = groupColumnandDraw(newData);
+            //totalTable0 = countGrades(newData);
+            var row1 = newData.getFilteredRows([{column:3, minValue:'A', maxValue: 'WU'}]);
+            var totalTable1= reorganize(row1, newData);
+            //var view = new google.visualization.DataView(totalTable1);
+            //view.setColumns([1,2,4]);
+            //totalTable1=view.toDataTable();
+
+
+            drawDashboard(totalTable1 );
+/*
+            var table = new google.visualization.ChartWrapper({
+                  'chartType': 'Table',
+                  'dataTable': totalTable1,
+                  'containerId': 'Grade',
+            });
+            table.draw();
+*/
+
+          }
+
+
+/*
+          function calcTotal(grade ,totalGrade, pivotedData) {
+            var dataTotal = google.visualization.data.group(
+              pivotedData,
+              [{column: 0, type: 'string', modifier: function () {return grade;}}],
+              [
+                {
+                  aggregation: google.visualization.data.sum,
+                  column: totalGrade,
+                  label: 'Total',
+                  type: 'number'
+                }
+              ]
+            );
+            return dataTotal;
+            }
+*/
+
+
+
+
+
+        function countGrades(studentTable) {
+
+            var gradeTable = google.visualization.data.group(studentTable,[3],
+
+                                    [{'column':0,
+
+                                       'aggregation': google.visualization.data.count,
+                                        'label': 'Total',
+
+                                       'type': 'number'}]);
+
+
+              return gradeTable;
+
+          }
+
+
+
+
+
+
+
+
+        function drawDashboard(data){
+          //create a dashboard
+
+
+          // Create a range slider, passing some options
+
+          var semesterRangeSlider = new google.visualization.ControlWrapper({
+            controlType: 'CategoryFilter',
+            containerId: 'filter_div',
+            options: {
+              filterColumnIndex: '1',
+              ui: {
+                allowMultiple: true,
+                selectedValuesLayout: 'belowStacked'
+              }
+            },
+            'state': {'lowValue': 201009, 'highValue': 201602}
+          });
+
+
+
+
+        // semesterRangeSlider.draw(data);
+
+
+/*
+          var genderPicker = new google.visualization.ControlWrapper({
+            'controlType': 'CategoryFilter',
+            'containerId': 'control2',
+            'options': {
+              'filterColumnLabel': 'Gender',
+              'ui': {
+                'labelStacking': 'vertical',
+                'allowTyping': false,
+                'allowMultiple': false
+              }
+            }
+          });
+
+*/
+          // Create a pie chart, passing some options
+
+          var barChart = new google.visualization.ChartWrapper({
+            'chartType': 'BarChart',
+            'containerId': 'chart_div',
+            'options': {
+
+            },
+           'view': {'columns': [0,1]}
+          });
+
+
+
+          var gradeTable = countGrades(data);
+
+
+
+
+
+
+
+            google.visualization.events.addListener(semesterRangeSlider, 'statechange', function () {
+
+
+
+              var state = semesterRangeSlider.getState();
+              var selectRows;
+              for (var i = 0; i < state.selectedValues.length; i++) {
+                  selectRows = data.getFilteredRows([{column: 1, value: state.selectedValues[i]}]);
+              }
+               var selectData = reorganize(selectRows, data);
+
+              var gradeTable = countGrades(selectData);
+
+
+            //  gradeTable.addColumn('number', 'Time');
+
+/*
+              for(var i = 0; i< gradeTable.getNumberOfRows(); i++){
+                    if(i < state.selectedValues.length)
+                        gradeTable.setValue(i, 2, state.selectedValues[i]);
+                    else {
+                        gradeTable.setValue(i, 2, state.selectedValues[1]);
+                         }
+              }
+*/
+            });
+
+
+
+
+            var dashboard = new google.visualization.Dashboard(document.getElementById('dashboard_div'));
+
+            dashboard.bind(semesterRangeSlider, barChart);
+
+            dashboard.draw(gradeTable);
+
+
+
+
+          // Establish dependencies, declaring that 'filter' drives 'pieChart',
+          // so that the pie chart will only display entries that are let through
+          // given the chosen slider range.
+
+        }
+
+
+
+
+        /*
+
+           function groupColumnandDraw(newData){
+             var distinctValues = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D', 'W', 'WU', 'WD', 'WN', 'F'];
+             var viewColumns = [0,1];
+             var groupColumns = [];
+             //select each student's grade and make each grade as a column
+             for (var i = 0; i < distinctValues.length; i++) {
+                 viewColumns.push({
+                     type: 'number',
+                     label: distinctValues[i],
+                     calc: (function (x) {
+                         return function (dt, row) {
+                             return (dt.getValue(row, 3) == x) ? 1 : 0;
+
+                         }
+                     })(distinctValues[i])
+                 });
+                 groupColumns.push({
+                     column: i+2,
+                     type: 'number',
+                    aggregation: google.visualization.data.sum
+                 });
+             }
+
+             var view = new google.visualization.DataView(newData);
+
+
+             view.setColumns(viewColumns);
+             var pivotedData = google.visualization.data.group(view, [1], groupColumns);
+             pivotedData.addColumn('string','Task');
+             var dataView = new google.visualization.DataView(pivotedData);
+            dataView.setColumns([{calc: function(data, row) { return data.getFormattedValue(row, 0); }, type:'string'}, 1, 2,3,4, 5, 6, 7, 8, 9, 10, 11, 12]);
+             return dataView;
+         }
+         */
+
+
+
+
+           function reorganize(rows, joinData){
+             var view1 = new google.visualization.DataView(joinData);
+             view1.setRows(rows);
+             var newData = view1.toDataTable();
+             return newData;
+           }
+
+
+
+            function drawVisualization() {
+                var timeDataTable;
+                var demoDataTable;
+                var queryString = ""; // encodeURIComponent('LIMIT 5');
+                var timeSheetURL = 'https://docs.google.com/spreadsheets/d/1PV1YqyqkwkR0DJgxxVHFAOm0GvUemIlh4hE5ZqmvLNg/gviz/tq?sheet=Time&headers=1';
+                var demoSheetURL = 'https://docs.google.com/spreadsheets/d/1PV1YqyqkwkR0DJgxxVHFAOm0GvUemIlh4hE5ZqmvLNg/gviz/tq?sheet=Demographics&headers=1'
+                var timeURL = timeSheetURL + queryString;
+                var demoURL = demoSheetURL + queryString;
+                function handleError(message) {
+                    alert(message);
+                }
+                function setTimeTable(response) {
+                  console.log("setTimeTable");
+                    timeDataTable = response.getDataTable();
+                    console.log(timeDataTable.getNumberOfRows());
+                }
+                function setDemoTable(response) {
+                  console.log("setDemoTable");
+                    demoDataTable = response.getDataTable();
+                    console.log(demoDataTable.getNumberOfRows());
+                }
+                function wrapTable(response) {
+                  console.log("wrapTable");
+                  return response.getDataTable();
+                }
+                // this is where action begins
+                function loadData(url) {
+                  console.log(url);
+                  return new Promise(
+                    function(resolve, reject) {
+                      var query = new google.visualization.Query(url);
+                      query.send(function (response) {
+                          if(response.isError()) {
+                            reject(response.getMessage() + ' ' + response.getDetailedMessage());
+                          } else {
+                            resolve(response);
+                          }
+                       }
+                    )}
+                  )
+                }
+                // we want to do these "in parallel" and when both are done, combine data and draw chart.
+                // how do we do that with two Promises?
+               Promise.all([loadData(timeURL).then(wrapTable, handleError),
+                               loadData(demoURL).then(wrapTable, handleError)]).
+                          then(joinAndDraw);
+            }
+
+
+
+        </script>
+    </head>
+
+    <body>
+
+      <<!--Div that will hold the dashboard-->
+      <div id="dashboard_div">
+      <!--Divs that will hold each control and chart-->
+      <div id="filter_div"></div>
+      <div id="Grade"></div>
+      <div id="chart_div"></div>
+      </div>
+
+    </body>
+</html>
+<!--
+// calculate the sum of each column
+  function calcTotal(grade ,totalGrade, pivotedData) {
+    var dataTotal = google.visualization.data.group(
+      pivotedData,
+      [{column: 0, type: 'string', modifier: function () {return grade;}}],
+      [
+        {
+          aggregation: google.visualization.data.sum,
+          column: totalGrade,
+          label: 'Total',
+          type: 'number'
+        }
+      ]
+    );
+    return dataTotal;
+    }
+-->
